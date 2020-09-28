@@ -5,8 +5,14 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 
-function generateRandomString() {
-
+function generateRandomString() { //random string for shortened url
+  let result = ''; 
+  const charList = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  for( let i = 0; i < 6; i++){
+    const newIndex = Math.floor(Math.random() * charList.length);
+    result += charList[newIndex];
+  }
+  return result;
 }
 
 const urlDatabase = { 
@@ -43,6 +49,8 @@ app.get("/urls/:shortURL", (req, res) => { //GET url
 
 app.post("/urls", (req, res) => {
   console.log(req.body);  // Log the POST request body to the console
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = req.body.longURL;
   res.send("Ok");         // Respond with 'Ok' (we will replace this)
 });
 
