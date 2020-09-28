@@ -48,10 +48,24 @@ app.get("/urls/:shortURL", (req, res) => { //GET url
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
+  //console.log(req.body);  // Log the POST request body to the console
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = req.body.longURL;
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  res.statusCode = 200;
+  
+  res.redirect(`/urls/${shortURL}`);
+});
+
+app.get("/u/:shortURL", (req, res) => {
+  //console.log(req.body);
+  const longURL = urlDatabase[req.params.shortURL];
+  console.log(longURL);
+  if(longURL){
+    res.redirect(longURL);
+  } else {
+    
+  }
+  
 });
 
 app.listen(PORT, () => {
