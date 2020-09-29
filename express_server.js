@@ -47,15 +47,6 @@ app.get("/urls/:shortURL", (req, res) => { //GET url
   res.render("urls_show", templateVars);
 });
 
-app.post("/urls", (req, res) => {
-  //console.log(req.body);  // Log the POST request body to the console
-  const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
-  res.statusCode = 200;
-  
-  res.redirect(`/urls/${shortURL}`);
-});
-
 app.get("/u/:shortURL", (req, res) => {
   //console.log(req.body);
   const longURL = urlDatabase[req.params.shortURL];
@@ -67,6 +58,24 @@ app.get("/u/:shortURL", (req, res) => {
   }
   
 });
+
+app.post("/urls", (req, res) => {
+  //console.log(req.body);  // Log the POST request body to the console
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = req.body.longURL;
+  res.statusCode = 200;
+  
+  res.redirect(`/urls/${shortURL}`);
+});
+
+app.post("/urls/:shortURL/delete", (req, res) => {
+  const shortURL = req.params.shortURL;
+  delete urlDatabase[shortURL];
+  console.log("Deleting: ", shortURL);
+  res.statusCode = 200;
+
+  res.redirect('/urls');
+})
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
