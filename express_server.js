@@ -68,11 +68,17 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
+app.post("/urls/:shortURL", (req, res) => {
+  const longURL = req.body.longURL;
+  const shortURL = req.params.shortURL;
+  urlDatabase[shortURL] = longURL;
+  
+  res.redirect(`/urls/${shortURL}`);
+})
+
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
-  console.log("Deleting: ", shortURL);
-  res.statusCode = 200;
 
   res.redirect('/urls');
 })
