@@ -40,6 +40,18 @@ const users = {
   }
 };
 
+const checkEmail = function(email, users) {
+  for (let id in users) {
+    const user = users[id];
+    if (user.email === email) {
+      return true;
+    }
+
+  }
+  return false;
+
+};
+
 
 app.get("/", (req, res) => { //landing page
   res.send("Hello!");
@@ -55,25 +67,31 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => { //indexes all urls and its shortened url
   //console.log(req.cookies);
+  const id = req.cookies['user_id'];
+  const user = users[id];
   const templateVars = {
-    username: req.cookies['username'],
+    user,
     urls: urlDatabase
   };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => { // POST new url
+  const id = req.cookies['user_id'];
+  const user = users[id];
   const templateVars = {
-    username: req.cookies["username"],
+    user
+    
     // ... any other vars
   };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => { //GET url
-
+  const id = req.cookies['user_id'];
+  const user = users[id];
   const templateVars = {
-    username: req.cookies['username'],
+    user,
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
@@ -92,9 +110,13 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/register", (req, res) => { //GET url
+  const id = req.cookies['user_id'];
+  const user = users[id];
 
   const templateVars = {
-    username: req.cookies['username']};
+    //username: req.cookies['username']
+    user
+  };
 
   res.render("register", templateVars);
 });
@@ -123,9 +145,17 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect('/urls');
 });
 
+/*NEED TO CHANGE LOGIN COOKIES */
+
 app.post("/login", (req, res) => {
   const username = req.body.username;
-  res.cookie('username', username);
+  if (username) {
+    res.cookie('username', username);
+  } else {
+    //handle empty login
+    console.log('empty login????');
+  }
+  
 
 
   res.redirect('/urls');
@@ -134,7 +164,7 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
   //const username = req.body.username;
 
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   //console.log("LOGOUT");
 
   res.redirect('/urls');
@@ -149,10 +179,22 @@ app.post("/register", (req, res) => {
     email,
     password
   };
-  res.cookie('user_id', id);
-  users[id] = newUser;
-  res.redirect('/urls');
-  console.log('Users: ', users);
+  if (!(email && password)) { //check if both email and password are not blank
+    console.log('empty!!!!');
+    res.status(400).json({message: 'Bad Request no username/password provided'});
+    
+    console.log(res);
+  } else if (checkEmail(email, users)) { //check if email exists
+    console.log('users exists already');
+    res.status(400).json({message: 'Bad Request email already exists'});
+
+  } else { //create cookie and add users to database
+    res.cookie('user_id', id);
+    users[id] = newUser;
+    res.redirect('/urls');
+    console.log('Users: ', users);
+  }
+  
 });
 
 app.listen(PORT, () => {
