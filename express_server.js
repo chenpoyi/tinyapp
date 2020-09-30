@@ -121,6 +121,18 @@ app.get("/register", (req, res) => { //GET url
   res.render("register", templateVars);
 });
 
+app.get("/login", (req, res) => { //GET url
+  const id = req.cookies['user_id'];
+  const user = users[id];
+
+  const templateVars = {
+    //username: req.cookies['username']
+    user
+  };
+
+  res.render("login", templateVars);
+});
+
 app.post("/urls", (req, res) => {
   //console.log(req.body);  // Log the POST request body to the console
   const shortURL = generateRandomString();
