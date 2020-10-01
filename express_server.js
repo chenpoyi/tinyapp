@@ -42,7 +42,7 @@ const users = {
 };
 
 const checkEmail = function(email, users) {
-  console.log("users in check: ", users);
+  //console.log("users in check: ", users);
   for (let id in users) {
     const user = users[id];
     if (user.email === email) {
@@ -52,6 +52,19 @@ const checkEmail = function(email, users) {
   }
   return undefined;
 
+};
+
+const urlsForUser = function(id) {
+  const urlList = {};
+  for (let key in urlDatabase) {
+    const url = urlDatabase[key];
+    if (url.userID === id) {
+      urlList[key] = {};
+      urlList[key].userID = id;
+      urlList[key].longURL = url.longURL;
+    }
+  }
+  return urlList;
 };
 
 
@@ -71,13 +84,17 @@ app.get("/urls", (req, res) => { //indexes all urls and its shortened url
   //console.log(req.cookies);
   const id = req.cookies['user_id'];
   const user = users[id];
+  const urls = urlsForUser(id);
+
+  console.log("URLS ",urls);
+
   const templateVars = {
     user,
-    urls: urlDatabase
+    urls
   };
-  console.log("FIRST URL DATA: ", urlDatabase);
+  //console.log("FIRST URL DATA: ", urlDatabase);
   res.render("urls_index", templateVars);
-  console.log("FIRST URL DATA2222: ", urlDatabase);
+  //console.log("FIRST URL DATA2222: ", urlDatabase);
 });
 
 app.get("/urls/new", (req, res) => { // POST new url
@@ -97,7 +114,7 @@ app.get("/urls/new", (req, res) => { // POST new url
 });
 
 app.get("/urls/:shortURL", (req, res) => { //GET url
-  console.log(urlDatabase);
+  //console.log(urlDatabase);
   const id = req.cookies['user_id'];
   const user = users[id];
   
@@ -105,6 +122,7 @@ app.get("/urls/:shortURL", (req, res) => { //GET url
     user,
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL].longURL };
+    //console.log("TEMPLATE VARS: ", templateVars)
   res.render("urls_show", templateVars);
 });
 
@@ -145,7 +163,9 @@ app.get("/login", (req, res) => { //GET url
 app.post("/urls", (req, res) => {
   //console.log(req.body);  // Log the POST request body to the console
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
+  urlDatabase[shortURL] = {};
+  urlDatabase[shortURL]['longURL'] = req.body.longURL;
+  urlDatabase[shortURL].userID = req.cookies['user_id'];
   res.statusCode = 200;
   
   res.redirect(`/urls/${shortURL}`);
@@ -154,21 +174,29 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:shortURL", (req, res) => {
   const longURL = req.body.longURL;
   const shortURL = req.params.shortURL;
+  console.log("THIS: ", urlDatabase[shortURL]);
+  if ((urlDatabase[shortURL].userID === req.cookies['user_id'])) {
   
+    console.log("ID MATCH");
+    const newURLObj = {
+      longURL,
+      userID: req.cookies['user_id']
+    };
+    urlDatabase[shortURL] = newURLObj;
+
+  }
   
-  const newURLObj = {
-    longURL,
-    userID: req.cookies['user_id']
-  };
-  urlDatabase[shortURL] = longURL;
-  
+ 
   res.redirect(`/urls/${shortURL}`);
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
-  delete urlDatabase[shortURL];
+  if ((urlDatabase[shortURL].userID === req.cookies['user_id'])) {
+    delete urlDatabase[shortURL];
 
+  
+  }
   res.redirect('/urls');
 });
 
