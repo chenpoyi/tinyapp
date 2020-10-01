@@ -1,4 +1,5 @@
 const express = require("express");
+const { getUserByEmail, generateRandomString } = require('./helpers.js');
 //const cookieParser = require('cookie-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
@@ -11,21 +12,13 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
   keys: [
-      'supersecretsecret', 'anotherreallylongrandomstring', 'knockknockwhosthereshhhitsasecret'
+    'supersecretsecret', 'anotherreallylongrandomstring', 'knockknockwhosthereshhhitsasecret'
   ]
-}))
+}));
 
 app.set("view engine", "ejs");
 
-const generateRandomString = function() { //random string for shortened url
-  let result = '';
-  const charList = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  for (let i = 0; i < 6; i++) {
-    const newIndex = Math.floor(Math.random() * charList.length);
-    result += charList[newIndex];
-  }
-  return result;
-};
+// 
 
 const urlDatabase = {
 
@@ -46,18 +39,18 @@ const users = {
   }
 };
 
-const checkEmail = function(email, users) {
-  //console.log("users in check: ", users);
-  for (let id in users) {
-    const user = users[id];
-    if (user.email === email) {
-      return user;
-    }
+// const getUserByEmail = function(email, users) {
+//   //console.log("users in check: ", users);
+//   for (let id in users) {
+//     const user = users[id];
+//     if (user.email === email) {
+//       return user;
+//     }
 
-  }
-  return undefined;
+//   }
+//   return undefined;
 
-};
+// };
 
 const urlsForUser = function(id) {
   const urlList = {};
@@ -211,8 +204,8 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   console.log("email: ", email);
-  console.log("check: ", checkEmail(email, users));
-  const user = checkEmail(email, users);
+  // console.log("check: ", checkEmail(email, users));
+  const user = getUserByEmail(email, users);
   const checkPassword = bcrypt.compareSync(password, user.password);
   console.log("PASSCHECK: ", checkPassword);
   if (user) {
@@ -258,7 +251,7 @@ app.post("/register", (req, res) => {
     res.status(400).json({message: 'Bad Request no email/password provided'});
     
     console.log(res);
-  } else if (checkEmail(email, users)) { //check if email exists
+  } else if (getUserByEmail(email, users)) { //check if email exists
     console.log('users exists already');
     res.status(400).json({message: 'Bad Request email already exists'});
 
