@@ -12,7 +12,7 @@ app.use(cookieParser());
 
 app.set("view engine", "ejs");
 
-function generateRandomString() { //random string for shortened url
+const generateRandomString = function() { //random string for shortened url
   let result = '';
   const charList = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   for (let i = 0; i < 6; i++) {
@@ -20,7 +20,7 @@ function generateRandomString() { //random string for shortened url
     result += charList[newIndex];
   }
   return result;
-}
+};
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -41,14 +41,15 @@ const users = {
 };
 
 const checkEmail = function(email, users) {
+  console.log("users in check: ", users);
   for (let id in users) {
     const user = users[id];
     if (user.email === email) {
-      return true;
+      return user;
     }
 
   }
-  return false;
+  return undefined;
 
 };
 
@@ -103,8 +104,6 @@ app.get("/u/:shortURL", (req, res) => {
   //console.log(longURL);
   if (longURL) {
     res.redirect(longURL);
-  } else {
-    
   }
   
 });
@@ -160,12 +159,23 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 /*NEED TO CHANGE LOGIN COOKIES */
 
 app.post("/login", (req, res) => {
-  const username = req.body.username;
-  if (username) {
-    res.cookie('username', username);
+  const email = req.body.email;
+  const password = req.body.password;
+  console.log("email: ", email);
+  console.log("check: ", checkEmail(email, users));
+  const user = checkEmail(email, users);
+  if (user) {
+    if (user.password === password) {
+      res.cookie('user_id', user.id);
+      res.redirect('/urls');
+    } else {
+      res.status(403).json({message: 'Bad Request password mismatch'});
+
+    }
+
+    
   } else {
-    //handle empty login
-    console.log('empty login????');
+    res.status(403).json({message: 'Bad Request email not found'});
   }
   
 
@@ -193,7 +203,7 @@ app.post("/register", (req, res) => {
   };
   if (!(email && password)) { //check if both email and password are not blank
     console.log('empty!!!!');
-    res.status(400).json({message: 'Bad Request no username/password provided'});
+    res.status(400).json({message: 'Bad Request no email/password provided'});
     
     console.log(res);
   } else if (checkEmail(email, users)) { //check if email exists
