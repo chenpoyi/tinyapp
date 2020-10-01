@@ -23,8 +23,9 @@ const generateRandomString = function() { //random string for shortened url
 };
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "user2RandomID" }
 };
 
 const users = {
@@ -74,7 +75,9 @@ app.get("/urls", (req, res) => { //indexes all urls and its shortened url
     user,
     urls: urlDatabase
   };
+  console.log("FIRST URL DATA: ", urlDatabase);
   res.render("urls_index", templateVars);
+  console.log("FIRST URL DATA2222: ", urlDatabase);
 });
 
 app.get("/urls/new", (req, res) => { // POST new url
@@ -85,22 +88,29 @@ app.get("/urls/new", (req, res) => { // POST new url
     
     // ... any other vars
   };
-  res.render("urls_new", templateVars);
+  if (user) {
+    res.render("urls_new", templateVars);
+  } else {
+    res.redirect('/login');
+  }
+  
 });
 
 app.get("/urls/:shortURL", (req, res) => { //GET url
+  console.log(urlDatabase);
   const id = req.cookies['user_id'];
   const user = users[id];
+  
   const templateVars = {
     user,
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL] };
+    longURL: urlDatabase[req.params.shortURL].longURL };
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
   //console.log(req.body);
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   //console.log(longURL);
   if (longURL) {
     res.redirect(longURL);
@@ -144,6 +154,12 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:shortURL", (req, res) => {
   const longURL = req.body.longURL;
   const shortURL = req.params.shortURL;
+  
+  
+  const newURLObj = {
+    longURL,
+    userID: req.cookies['user_id']
+  };
   urlDatabase[shortURL] = longURL;
   
   res.redirect(`/urls/${shortURL}`);
@@ -180,7 +196,7 @@ app.post("/login", (req, res) => {
   
 
 
-  res.redirect('/urls');
+  //res.redirect('/urls');
 });
 
 app.post("/logout", (req, res) => {
