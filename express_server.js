@@ -1,6 +1,5 @@
 const express = require("express");
 const { getUserByEmail, generateRandomString } = require('./helpers.js');
-//const cookieParser = require('cookie-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 
