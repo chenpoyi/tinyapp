@@ -35,6 +35,6 @@ describe('generateRandomString', function() {
   it('should return a string with length of 6', function() {
     const string = generateRandomString();
     assert.equal(string.length, 6);
-  })
+  });
   
 });

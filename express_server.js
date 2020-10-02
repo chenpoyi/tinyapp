@@ -18,7 +18,7 @@ app.use(cookieSession({
 
 app.set("view engine", "ejs");
 
-// 
+//
 
 const urlDatabase = {
 
@@ -39,19 +39,6 @@ const users = {
   }
 };
 
-// const getUserByEmail = function(email, users) {
-//   //console.log("users in check: ", users);
-//   for (let id in users) {
-//     const user = users[id];
-//     if (user.email === email) {
-//       return user;
-//     }
-
-//   }
-//   return undefined;
-
-// };
-
 const urlsForUser = function(id) {
   const urlList = {};
   for (let key in urlDatabase) {
@@ -66,8 +53,14 @@ const urlsForUser = function(id) {
 };
 
 
-app.get("/", (req, res) => { //landing page
-  res.send("Hello!");
+app.get("/", (req, res) => { //landing page --> redirect to /urls if logged in, /login if not
+  console.log("SESSIONS: ", req.session);
+  if (req.session.user_id) {
+    res.redirect('/urls');
+  } else {
+    res.redirect('/login');
+  }
+  
 });
 
 app.get("/urls.json", (req, res) => { //returns all urls in json string
@@ -90,14 +83,25 @@ app.get("/urls", (req, res) => { //indexes all urls and its shortened url
     user,
     urls
   };
+  console.log('id: ', id);
+  if (!id) {
+    //res.status(400).json({message: 'You must be logged in.'});
+    templateVars['code'] = 400;
+    templateVars['message'] = 'You must be logged in.';
+    res.render("error", templateVars);
+  } else {
   //console.log("FIRST URL DATA: ", urlDatabase);
-  res.render("urls_index", templateVars);
+    res.render("urls_index", templateVars);
   //console.log("FIRST URL DATA2222: ", urlDatabase);
+  }
+
 });
 
 app.get("/urls/new", (req, res) => { // POST new url
   const id = req.session.user_id;
+  console.log('ID1: ', id);
   const user = users[id];
+  console.log(user);
   const templateVars = {
     user
     
@@ -115,21 +119,61 @@ app.get("/urls/:shortURL", (req, res) => { //GET url
   //console.log(urlDatabase);
   const id = req.session.user_id;
   const user = users[id];
+  //console.log(urlDatabase[id].userID);
+  console.log("URLS FOR USER: ", urlsForUser(id));
+  if (!id) {
+    const templateVars = {
+      user
+    };
+    templateVars['code'] = 400;
+    templateVars['message'] = 'You must be logged in.';
+    res.render("error", templateVars);
+
+  } else if (!urlsForUser(id)[req.params.shortURL]) {
+    console.log(urlsForUser(id).shortURL);
+    //console.log("MISMATCH: ", shortURL );
+    const templateVars = {
+      user
+    };
+    templateVars['code'] = 400;
+    templateVars['message'] = 'You do not have permission for this page.';
+    res.render("error", templateVars);
+
+  } else if (!urlDatabase[req.params.shortURL]) {
+    const templateVars = {
+      user
+    };
+    templateVars['code'] = 400;
+    templateVars['message'] = 'The shortURL does not exist.';
+    res.render("error", templateVars);
+
+  } else {
+    const templateVars = {
+      user,
+      shortURL: req.params.shortURL,
+      longURL: urlDatabase[req.params.shortURL].longURL };
+      //console.log("TEMPLATE VARS: ", templateVars)
+    res.render("urls_show", templateVars);
+  }
+
   
-  const templateVars = {
-    user,
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL].longURL };
-    //console.log("TEMPLATE VARS: ", templateVars)
-  res.render("urls_show", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
   //console.log(req.body);
-  const longURL = urlDatabase[req.params.shortURL].longURL;
+  const url = urlDatabase[req.params.shortURL];
+  const id = req.session.user_id;
+  const user = users[id];
   //console.log(longURL);
-  if (longURL) {
-    res.redirect(longURL);
+  if (!url) {
+    const templateVars = {
+      user
+    };
+    templateVars['code'] = 400;
+    templateVars['message'] = 'The shortURL does not exist.';
+    res.render("error", templateVars);
+  } else {
+    res.redirect(url.longURL);
   }
   
 });
@@ -142,8 +186,12 @@ app.get("/register", (req, res) => { //GET url
     //username: req.cookies['username']
     user
   };
-
-  res.render("register", templateVars);
+  if (id) {
+    res.redirect('/urls');
+  } else {
+    res.render("register", templateVars);
+  }
+  
 });
 
 app.get("/login", (req, res) => { //GET url
@@ -154,26 +202,61 @@ app.get("/login", (req, res) => { //GET url
     //username: req.cookies['username']
     user
   };
-
-  res.render("login", templateVars);
+  if (id) {
+    res.redirect('/urls');
+  } else {
+    res.render("login", templateVars);
+  }
+ 
 });
+
+
 
 app.post("/urls", (req, res) => {
   //console.log(req.body);  // Log the POST request body to the console
-  const shortURL = generateRandomString();
-  urlDatabase[shortURL] = {};
-  urlDatabase[shortURL]['longURL'] = req.body.longURL;
-  urlDatabase[shortURL].userID = req.session.user_id;
-  res.statusCode = 200;
   
-  res.redirect(`/urls/${shortURL}`);
+
+  const id = req.session.user_id;
+ 
+  const user = users[id];
+
+  
+  if (user) {
+    const shortURL = generateRandomString();
+    urlDatabase[shortURL] = {};
+    urlDatabase[shortURL]['longURL'] = req.body.longURL;
+    urlDatabase[shortURL].userID = req.session.user_id;
+    res.statusCode = 200;
+  
+    res.redirect(`/urls/${shortURL}`);
+  } else {
+    const templateVars = {
+      user
+    };
+    templateVars['code'] = 400;
+    templateVars['message'] = 'You must be logged in.';
+    res.render("error", templateVars);
+  }
 });
 
 app.post("/urls/:shortURL", (req, res) => {
   const longURL = req.body.longURL;
   const shortURL = req.params.shortURL;
+  const id = req.session.user_id;
+  const user = users[id];
   console.log("THIS: ", urlDatabase[shortURL]);
-  if ((urlDatabase[shortURL].userID === req.session.user_id)) {
+  if (!id) {
+    
+    const templateVars = {
+      user
+      
+      // ... any other vars
+    };
+    
+    templateVars['code'] = 400;
+    templateVars['message'] = 'You must be logged in.';
+    res.render("error", templateVars);
+  } else if ((urlDatabase[shortURL].userID === req.session.user_id)) {
   
     console.log("ID MATCH");
     const newURLObj = {
@@ -181,21 +264,49 @@ app.post("/urls/:shortURL", (req, res) => {
       userID: req.session.user_id
     };
     urlDatabase[shortURL] = newURLObj;
-
+    res.redirect(`/urls`);
+  } else {
+    
+    const templateVars = {
+      user
+    };
+    templateVars['code'] = 400;
+    templateVars['message'] = 'You do not have permission for this page.';
+    res.render("error", templateVars);
   }
   
  
-  res.redirect(`/urls/${shortURL}`);
+  
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
-  if ((urlDatabase[shortURL].userID === req.session.user_id)) {
-    delete urlDatabase[shortURL];
+  const id = req.session.user_id;
+  const user = users[id];
+  if (!id) {
 
+    const templateVars = {
+      user
+      
+      // ... any other vars
+    };
+    
+    templateVars['code'] = 400;
+    templateVars['message'] = 'You must be logged in.';
+    res.render("error", templateVars);
+  } else if ((urlDatabase[shortURL].userID === req.session.user_id)) {
+    delete urlDatabase[shortURL];
+    res.redirect('/urls');
   
+  } else {
+    const templateVars = {
+      user
+    };
+    templateVars['code'] = 400;
+    templateVars['message'] = 'You do not have permission for this page.';
+    res.render("error", templateVars);
   }
-  res.redirect('/urls');
+  
 });
 
 /*NEED TO CHANGE LOGIN COOKIES */
@@ -203,23 +314,36 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  console.log("email: ", email);
+  //console.log("email: ", email);
   // console.log("check: ", checkEmail(email, users));
   const user = getUserByEmail(email, users);
-  const checkPassword = bcrypt.compareSync(password, user.password);
-  console.log("PASSCHECK: ", checkPassword);
+  
+  //console.log("PASSCHECK: ", checkPassword);
+  
   if (user) {
+    const checkPassword = bcrypt.compareSync(password, user.password);
     if (checkPassword) {
       req.session.user_id = user.id;
       res.redirect('/urls');
     } else {
-      res.status(403).json({message: 'Bad Request password mismatch'});
-
+      
+      const templateVars = {
+        user : undefined
+      };
+      templateVars['code'] = 403;
+      templateVars['message'] = 'Bad Request password mismatch';
+      res.render("error", templateVars);
     }
 
     
   } else {
-    res.status(403).json({message: 'Bad Request email not found'});
+   
+    const templateVars = {
+      user : undefined
+    };
+    templateVars['code'] = 403;
+    templateVars['message'] = 'Bad Request email not found';
+    res.render("error", templateVars);
   }
   
 
@@ -248,18 +372,28 @@ app.post("/register", (req, res) => {
   };
   if (!(email && password)) { //check if both email and password are not blank
     console.log('empty!!!!');
-    res.status(400).json({message: 'Bad Request no email/password provided'});
-    
+  
+    const templateVars = {
+      user : undefined
+    };
+    templateVars['code'] = 400;
+    templateVars['message'] = 'Bad Request no email/password provided';
+    res.render("error", templateVars);
+  
+  
     console.log(res);
   } else if (getUserByEmail(email, users)) { //check if email exists
-    console.log('users exists already');
-    res.status(400).json({message: 'Bad Request email already exists'});
-
+    
+    const templateVars = {
+      user : undefined
+    };
+    templateVars['code'] = 400;
+    templateVars['message'] = 'Bad Request email already exists';
+    res.render("error", templateVars);
   } else { //create cookie and add users to database
     req.session.user_id = id;
     users[id] = newUser;
     res.redirect('/urls');
-    console.log('Users: ', users);
   }
   
 });
