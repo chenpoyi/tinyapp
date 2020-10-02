@@ -54,7 +54,6 @@ const urlsForUser = function(id) {
 
 
 app.get("/", (req, res) => { //landing page --> redirect to /urls if logged in, /login if not
-  console.log("SESSIONS: ", req.session);
   if (req.session.user_id) {
     res.redirect('/urls');
   } else {
@@ -72,36 +71,29 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => { //indexes all urls and its shortened url
-  //console.log(req.cookies);
   const id = req.session.user_id;
   const user = users[id];
   const urls = urlsForUser(id);
 
-  console.log("URLS ",urls);
 
   const templateVars = {
     user,
     urls
   };
-  console.log('id: ', id);
   if (!id) {
     //res.status(400).json({message: 'You must be logged in.'});
     templateVars['code'] = 400;
     templateVars['message'] = 'You must be logged in.';
     res.render("error", templateVars);
   } else {
-  //console.log("FIRST URL DATA: ", urlDatabase);
     res.render("urls_index", templateVars);
-  //console.log("FIRST URL DATA2222: ", urlDatabase);
   }
 
 });
 
 app.get("/urls/new", (req, res) => { // POST new url
   const id = req.session.user_id;
-  console.log('ID1: ', id);
   const user = users[id];
-  console.log(user);
   const templateVars = {
     user
     
@@ -116,11 +108,8 @@ app.get("/urls/new", (req, res) => { // POST new url
 });
 
 app.get("/urls/:shortURL", (req, res) => { //GET url
-  //console.log(urlDatabase);
   const id = req.session.user_id;
   const user = users[id];
-  //console.log(urlDatabase[id].userID);
-  console.log("URLS FOR USER: ", urlsForUser(id));
   if (!id) {
     const templateVars = {
       user
@@ -130,8 +119,6 @@ app.get("/urls/:shortURL", (req, res) => { //GET url
     res.render("error", templateVars);
 
   } else if (!urlsForUser(id)[req.params.shortURL]) {
-    console.log(urlsForUser(id).shortURL);
-    //console.log("MISMATCH: ", shortURL );
     const templateVars = {
       user
     };
@@ -152,7 +139,6 @@ app.get("/urls/:shortURL", (req, res) => { //GET url
       user,
       shortURL: req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL].longURL };
-      //console.log("TEMPLATE VARS: ", templateVars)
     res.render("urls_show", templateVars);
   }
 
@@ -160,11 +146,9 @@ app.get("/urls/:shortURL", (req, res) => { //GET url
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  //console.log(req.body);
   const url = urlDatabase[req.params.shortURL];
   const id = req.session.user_id;
   const user = users[id];
-  //console.log(longURL);
   if (!url) {
     const templateVars = {
       user
@@ -183,7 +167,6 @@ app.get("/register", (req, res) => { //GET url
   const user = users[id];
 
   const templateVars = {
-    //username: req.cookies['username']
     user
   };
   if (id) {
@@ -194,12 +177,11 @@ app.get("/register", (req, res) => { //GET url
   
 });
 
-app.get("/login", (req, res) => { //GET url
+app.get("/login", (req, res) => {
   const id = req.session.user_id;
   const user = users[id];
 
   const templateVars = {
-    //username: req.cookies['username']
     user
   };
   if (id) {
@@ -213,7 +195,6 @@ app.get("/login", (req, res) => { //GET url
 
 
 app.post("/urls", (req, res) => {
-  //console.log(req.body);  // Log the POST request body to the console
   
 
   const id = req.session.user_id;
@@ -244,7 +225,6 @@ app.post("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const id = req.session.user_id;
   const user = users[id];
-  console.log("THIS: ", urlDatabase[shortURL]);
   if (!id) {
     
     const templateVars = {
@@ -258,7 +238,6 @@ app.post("/urls/:shortURL", (req, res) => {
     res.render("error", templateVars);
   } else if ((urlDatabase[shortURL].userID === req.session.user_id)) {
   
-    console.log("ID MATCH");
     const newURLObj = {
       longURL,
       userID: req.session.user_id
@@ -314,11 +293,8 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  //console.log("email: ", email);
-  // console.log("check: ", checkEmail(email, users));
   const user = getUserByEmail(email, users);
   
-  //console.log("PASSCHECK: ", checkPassword);
   
   if (user) {
     const checkPassword = bcrypt.compareSync(password, user.password);
@@ -355,7 +331,6 @@ app.post("/logout", (req, res) => {
   //const username = req.body.username;
 
   req.session = null;
-  //console.log("LOGOUT");
 
   res.redirect('/urls');
 });
@@ -371,7 +346,6 @@ app.post("/register", (req, res) => {
     password: hashedPassword
   };
   if (!(email && password)) { //check if both email and password are not blank
-    console.log('empty!!!!');
   
     const templateVars = {
       user : undefined
@@ -381,7 +355,6 @@ app.post("/register", (req, res) => {
     res.render("error", templateVars);
   
   
-    console.log(res);
   } else if (getUserByEmail(email, users)) { //check if email exists
     
     const templateVars = {

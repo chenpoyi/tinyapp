@@ -1,5 +1,4 @@
 const getUserByEmail = function(email, users) {
-  //console.log("users in check: ", users);
   for (let id in users) {
     const user = users[id];
     if (user.email === email) {
